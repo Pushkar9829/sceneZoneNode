@@ -91,7 +91,8 @@ async function sendOtp(mobileNumber, otp) {
  */
 async function createAndSendOtp(mobileNumber) {
   const otp = generateOtp(6)
-  otpStore.set(mobileNumber, otp)
+  const normalized = normalizeMobile(mobileNumber)
+  otpStore.set(normalized, otp)
   await sendOtp(mobileNumber, otp)
   return otp
 }
@@ -100,7 +101,8 @@ async function createAndSendOtp(mobileNumber) {
  * Verify OTP for a mobile number. Returns true if valid and consumes the OTP.
  */
 function verifyOtp(mobileNumber, otp) {
-  return otpStore.consume(mobileNumber, otp)
+  const normalized = normalizeMobile(mobileNumber)
+  return otpStore.consume(normalized, otp)
 }
 
 module.exports = {

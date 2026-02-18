@@ -8,7 +8,6 @@ const bcrypt = require('bcryptjs')
 const { cascadeDeleteHost } = require('../../../utils/deleteAccountService')
 
 const JWT_SECRET = process.env.JWT_SECRET
-const HARDCODED_OTP = '123456'
 const otpService = require('../../../utils/otpService')
 
 /**
@@ -31,8 +30,7 @@ exports.sendOtp = async (req, res) => {
 
 /**
  * Single endpoint: Register or Login (Host).
- * Number + OTP only. If user exists → login; else create user and login (no name/password required).
- * OTP: use hardcoded 123456 (dev) or the OTP sent via sendOtp (real SMS in future).
+ * Number + OTP only. Only the OTP sent via sendOtp (Msg91) to this number can verify.
  */
 exports.registerOrLogin = async (req, res) => {
   const { mobileNumber, otp } = req.body
@@ -42,9 +40,15 @@ exports.registerOrLogin = async (req, res) => {
   }
 
   try {
-    const isValidOtp =
-      (otp !== undefined && otp !== null && otp === HARDCODED_OTP) ||
-      otpService.verifyOtp(mobileNumber, otp)
+    const otpStr = otp != null ? String(otp).trim() : ''
+    if (!otpStr || otpStr === '123456') {
+      return apiResponse(res, {
+        success: false,
+        statusCode: 400,
+        message: 'Invalid or expired OTP',
+      })
+    }
+    const isValidOtp = otpService.verifyOtp(mobileNumber, otpStr)
     if (!isValidOtp) {
       return apiResponse(res, {
         success: false,
