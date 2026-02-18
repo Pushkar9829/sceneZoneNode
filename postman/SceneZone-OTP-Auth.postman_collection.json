@@ -1,0 +1,72 @@
+{
+  "info": {
+    "name": " OTP Auth",
+    "description": "Send OTP and verify/login for Artist and Host. Set `baseUrl` (e.g. http://localhost:5000) in collection variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "mobileNumber", "value": "+919876543210" },
+    { "key": "otp", "value": "123456" }
+  ],
+  "item": [
+    {
+      "name": "Artist",
+      "item": [
+        {
+          "name": "Send OTP (Artist)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mobileNumber\": \"{{mobileNumber}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/artist/auth/send-otp"
+          }
+        },
+        {
+          "name": "Verify OTP & Login (Artist)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mobileNumber\": \"{{mobileNumber}}\",\n  \"otp\": \"{{otp}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/artist/auth"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Host",
+      "item": [
+        {
+          "name": "Send OTP (Host)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mobileNumber\": \"{{mobileNumber}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/host/auth/send-otp"
+          }
+        },
+        {
+          "name": "Verify OTP & Login (Host)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mobileNumber\": \"{{mobileNumber}}\",\n  \"otp\": \"{{otp}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/host/auth"
+          }
+        }
+      ]
+    }
+  ]
+}
