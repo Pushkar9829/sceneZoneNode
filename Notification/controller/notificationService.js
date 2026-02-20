@@ -109,14 +109,31 @@ class NotificationService {
 
       const response = await admin.messaging().send(message);
       console.log('🔔 [sendPushNotification] FCM response:', response);
-      
-      // Update notification as sent
-      console.log('🔔 [sendPushNotification] Updating notification as sent...');
-      await Notification.findByIdAndUpdate(notificationData._id, { isPushSent: true });
-      console.log('🔔 [sendPushNotification] Notification marked as sent');
-      
+
+      // Update notification as sent (only if we have notification id from createAndSendNotification)
+      if (notificationData._id) {
+        console.log('🔔 [sendPushNotification] Updating notification as sent...');
+        await Notification.findByIdAndUpdate(notificationData._id, { isPushSent: true });
+        console.log('🔔 [sendPushNotification] Notification marked as sent');
+      }
     } catch (error) {
       console.error('🔔 [sendPushNotification] Error:', error);
+      const code = error.code || error.errorInfo?.code;
+      if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token') {
+        try {
+          const fcmTokenDoc = await FCMToken.findOne({
+            userId: notificationData.recipientId,
+            userType: notificationData.recipientType,
+            isActive: true,
+          });
+          if (fcmTokenDoc) {
+            await FCMToken.findByIdAndUpdate(fcmTokenDoc._id, { isActive: false });
+            console.log('🔔 [sendPushNotification] Marked stale FCM token as inactive for user:', notificationData.recipientId);
+          }
+        } catch (updateErr) {
+          console.error('🔔 [sendPushNotification] Failed to mark FCM token inactive:', updateErr);
+        }
+      }
     }
   }
 

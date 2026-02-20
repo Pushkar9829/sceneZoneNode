@@ -50,7 +50,12 @@ const app = express()
 const server = http.createServer(app)
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:3000', 'http://localhost:8081'], // Adjust for React Native app URLs
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:8081',
+      'https://api.thescenezone.com',
+      'http://api.thescenezone.com',
+    ],
     methods: ['GET', 'POST'],
     credentials: true,
   },
