@@ -298,9 +298,13 @@ const sendMessage = async (req, res) => {
         model: userRole === 'host' ? 'ArtistAuthentication' : 'HostAuthentication',
       });
 
-    console.log(`[${new Date().toISOString()}] [sendMessage] Emitting newMessage event to host ${chat.hostId} and artist ${chat.artistId}`);
-    io.to(chat.hostId.toString()).emit("newMessage", updatedChat);
-    io.to(chat.artistId.toString()).emit("newMessage", updatedChat);
+    const hostRoom = chat.hostId?.toString?.() || String(chat.hostId);
+    const artistRoom = chat.artistId?.toString?.() || String(chat.artistId);
+    console.log(`[${new Date().toISOString()}] [sendMessage] Emitting newMessage to rooms host=${hostRoom}, artist=${artistRoom}`);
+    if (io) {
+      io.to(hostRoom).emit("newMessage", updatedChat);
+      io.to(artistRoom).emit("newMessage", updatedChat);
+    }
 
     // Create notification for the recipient
     try {
@@ -406,8 +410,11 @@ const startChat = async (req, res) => {
         model: 'HostAuthentication',
       });
 
-      console.log(`[${new Date().toISOString()}] [startChat] Emitting newChat event to artist ${artistId}`);
-      io.to(artistId.toString()).emit("newChat", populatedChat);
+      const artistRoom = (populatedChat.artistId?._id || populatedChat.artistId || artistId)?.toString?.() || String(artistId);
+      console.log(`[${new Date().toISOString()}] [startChat] Emitting newChat to artist room=${artistRoom}`);
+      if (io) {
+        io.to(artistRoom).emit("newChat", populatedChat);
+      }
 
     // Create notification for the artist
     try {
@@ -417,7 +424,7 @@ const startChat = async (req, res) => {
       const host = await HostAuthentication.findById(hostId).select('fullName');
       
       const notificationData = {
-        recipientId: artistId,
+        recipientId: newChat.artistId, // use document ID for consistent FCM lookup
         recipientType: 'artist',
         senderId: hostId,
         senderType: 'host',
@@ -426,7 +433,7 @@ const startChat = async (req, res) => {
         type: 'event_invitation',
         data: {
           chatId: newChat._id,
-          eventId: eventId,
+          eventId: newChat.eventId ?? eventId,
         },
       };
 
@@ -526,9 +533,13 @@ const approvePrice = async (req, res) => {
         model: userRole === 'host' ? 'ArtistAuthentication' : 'HostAuthentication',
       });
 
-    console.log(`[${new Date().toISOString()}] [approvePrice] Emitting priceApproved event to host ${chat.hostId} and artist ${chat.artistId}`);
-    io.to(chat.hostId.toString()).emit("priceApproved", updatedChat);
-    io.to(chat.artistId.toString()).emit("priceApproved", updatedChat);
+    const hostRoom = chat.hostId?.toString?.() || String(chat.hostId);
+    const artistRoom = chat.artistId?.toString?.() || String(chat.artistId);
+    console.log(`[${new Date().toISOString()}] [approvePrice] Emitting priceApproved to rooms host=${hostRoom}, artist=${artistRoom}`);
+    if (io) {
+      io.to(hostRoom).emit("priceApproved", updatedChat);
+      io.to(artistRoom).emit("priceApproved", updatedChat);
+    }
 
     // Create notification for the recipient
     try {

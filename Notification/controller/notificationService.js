@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const admin = require('firebase-admin');
 const Notification = require('../model/notification');
 const FCMToken = require('../model/fcmToken');
@@ -23,9 +24,9 @@ class NotificationService {
         createdAt: notification.createdAt
       });
 
-      // 2. Send push notification
+      // 2. Send push notification (pass saved notification _id so isPushSent can be updated)
       console.log('🔔 [createAndSendNotification] Sending push notification...');
-      await this.sendPushNotification(notificationData);
+      await this.sendPushNotification({ ...notificationData, _id: notification._id });
 
       console.log('🔔 [createAndSendNotification] Completed successfully');
       return notification;
@@ -47,11 +48,18 @@ class NotificationService {
 
     try {
       const { recipientId, recipientType, title, body, data } = notificationData;
-      
+      const normalizedUserId = mongoose.Types.ObjectId.isValid(recipientId)
+        ? (recipientId instanceof mongoose.Types.ObjectId ? recipientId : new mongoose.Types.ObjectId(recipientId))
+        : null;
+      if (!normalizedUserId) {
+        console.warn('🔔 [sendPushNotification] Invalid recipientId:', recipientId);
+        return;
+      }
+
       // Get FCM token
       console.log('🔔 [sendPushNotification] Looking for FCM token...');
       const fcmToken = await FCMToken.findOne({ 
-        userId: recipientId, 
+        userId: normalizedUserId, 
         userType: recipientType,
         isActive: true 
       });

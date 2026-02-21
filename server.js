@@ -86,10 +86,16 @@ io.on('connection', (socket) => {
   socket.join(socket.id)
   console.log(`[${new Date().toISOString()}] User ${socket.id} joined their own room`)
   
-  // Join a room based on user ID
+  // Join a room based on user ID (must match hostId/artistId string used in io.to())
   socket.on('join', (userId) => {
-    socket.join(userId)
-    console.log(`[${new Date().toISOString()}] User ${userId} joined room`)
+    const room = userId != null ? String(userId) : null
+    if (room) {
+      socket.join(room)
+      socket.data.userId = room
+      console.log(`[${new Date().toISOString()}] User joined room: ${room}`)
+    } else {
+      console.warn(`[${new Date().toISOString()}] Socket join ignored: missing userId`)
+    }
   })
 
   // Handle disconnection
