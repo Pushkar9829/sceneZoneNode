@@ -34,6 +34,7 @@ const adminVerify = require('./Admin/Routes/Verification')
 const createUser = require('./Admin/Routes/createUser')
 const filterUsers = require('./Admin/Routes/filter')
 const appUsers = require('./Admin/Routes/allUsers')
+const updateArtistRoutes = require('./Admin/Routes/updateArtist')
 const bannerRoutes = require('./Admin/Routes/banner')
 
 const invoiceRoutes = require('./artistHostBooking/routes/invoiceRoutes')
@@ -144,6 +145,7 @@ app.use('/api/admin', [
   createUser,
   filterUsers,
   appUsers,
+  updateArtistRoutes,
 ])
 app.use('/api/admin/banner', bannerRoutes)
 app.use('/api/invoices', invoiceRoutes)

@@ -23,7 +23,6 @@ const createOrder = async (req, res) => {
     timestamp: new Date().toISOString(),
   })
 
-  // Validate input
   if (!amount || !currency || !eventId || !artistId) {
     console.error('Validation failed for create-order:', {
       hasAmount: !!amount,
@@ -32,18 +31,12 @@ const createOrder = async (req, res) => {
       hasArtistId: !!artistId,
       timestamp: new Date().toISOString(),
     })
-    res.status(400)
-    throw new Error('Missing required fields')
+    return res.status(400).json({ success: false, message: 'Missing required fields' })
   }
 
-  // Validate amount
   if (!Number.isInteger(amount) || amount <= 0) {
-    console.error('Invalid amount:', {
-      amount,
-      timestamp: new Date().toISOString(),
-    })
-    res.status(400)
-    throw new Error('Amount must be a positive integer in paise')
+    console.error('Invalid amount:', { amount, timestamp: new Date().toISOString() })
+    return res.status(400).json({ success: false, message: 'Amount must be a positive integer in paise' })
   }
 
   try {
@@ -79,8 +72,7 @@ const createOrder = async (req, res) => {
       stack: error.stack,
       timestamp: new Date().toISOString(),
     })
-    res.status(500)
-    throw new Error('Failed to create order')
+    return res.status(500).json({ success: false, message: 'Failed to create order' })
   }
 }
 
@@ -115,31 +107,32 @@ const verifyPayment = async (req, res) => {
     !eventId ||
     !artistId ||
     !invoices ||
-    !invoices.total
+    invoices.total == null ||
+    invoices.total === ''
   ) {
     console.error('Validation failed for verify-payment:', {
       hasOrderId: !!razorpay_order_id,
       hasPaymentId: !!razorpay_payment_id,
-      hasSignature: !!razorpay_signature,
       hasEventId: !!eventId,
       hasArtistId: !!artistId,
       hasInvoices: !!invoices,
-      hasTotal: !!invoices?.total,
+      hasTotal: invoices?.total != null,
       timestamp: new Date().toISOString(),
     })
-    res.status(400)
-    throw new Error('Missing required fields')
+    return res.status(400).json({ success: false, message: 'Missing required fields' })
   }
 
-  // Validate invoices.total is a number
-  if (isNaN(invoices.total) || invoices.total <= 0) {
-    console.error('Invalid invoices.total:', {
-      total: invoices.total,
-      timestamp: new Date().toISOString(),
-    })
-    res.status(400)
-    throw new Error('Invalid total amount')
+  const totalNum = Number(invoices.total)
+  if (isNaN(totalNum) || totalNum <= 0) {
+    console.error('Invalid invoices.total:', { total: invoices.total, timestamp: new Date().toISOString() })
+    return res.status(400).json({ success: false, message: 'Invalid total amount' })
   }
+
+  // Normalize invoice fields (accept camelCase from app)
+  const subtotal = Number(invoices.subtotal) || 0
+  const platform_fees = Number(invoices.platform_fees ?? invoices.platformFees) || 0
+  const taxes = Number(invoices.taxes ?? invoices.tax) || 0
+  const total = totalNum
 
   // Verify Razorpay signature
   const generatedSignature = crypto
@@ -154,12 +147,9 @@ const verifyPayment = async (req, res) => {
 
   if (generatedSignature !== razorpay_signature) {
     console.error('Invalid payment signature:', {
-      generatedSignature,
-      razorpay_signature,
       timestamp: new Date().toISOString(),
     })
-    res.status(400)
-    throw new Error('Invalid payment signature')
+    return res.status(400).json({ success: false, message: 'Invalid payment signature' })
   }
 
   // Validate event and artist existence
@@ -173,12 +163,8 @@ const verifyPayment = async (req, res) => {
     timestamp: new Date().toISOString(),
   })
   if (!event) {
-    console.error('Event not found:', {
-      eventId,
-      timestamp: new Date().toISOString(),
-    })
-    res.status(404)
-    throw new Error('Event not found')
+    console.error('Event not found:', { eventId, timestamp: new Date().toISOString() })
+    return res.status(404).json({ success: false, message: 'Event not found' })
   }
 
   console.log('Validating artist:', {
@@ -191,12 +177,8 @@ const verifyPayment = async (req, res) => {
     timestamp: new Date().toISOString(),
   })
   if (!artist) {
-    console.error('Artist not found:', {
-      artistId,
-      timestamp: new Date().toISOString(),
-    })
-    res.status(404)
-    throw new Error('Artist not found')
+    console.error('Artist not found:', { artistId, timestamp: new Date().toISOString() })
+    return res.status(404).json({ success: false, message: 'Artist not found' })
   }
 
   // Start a session for atomic updates
@@ -219,10 +201,10 @@ const verifyPayment = async (req, res) => {
           eventId,
           date_time: new Date(),
           invoices: {
-            subtotal: Number(invoices.subtotal) || 0,
-            platform_fees: Number(invoices.platform_fees) || 0,
-            taxes: Number(invoices.taxes) || 0,
-            total: Number(invoices.total),
+            subtotal,
+            platform_fees,
+            taxes,
+            total,
           },
           payment_status: 'completed',
           razorpay_order_id,
@@ -318,8 +300,10 @@ const verifyPayment = async (req, res) => {
       stack: error.stack,
       timestamp: new Date().toISOString(),
     })
-    res.status(400)
-    throw new Error('Failed to verify payment or create booking')
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to verify payment or create booking',
+    })
   }
 }
 

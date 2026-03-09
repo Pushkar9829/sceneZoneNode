@@ -1401,7 +1401,7 @@ exports.getAllEventsHost = async (req, res) => {
     const [total, events] = await Promise.all([
       Event.countDocuments(query),
       Event.find(query)
-        .populate({ path: "assignedArtists", select: "name" })
+        .populate({ path: "assignedArtists", select: "fullName" })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
